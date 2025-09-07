@@ -1,74 +1,69 @@
 const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
-const { v4: uuidv4 } = require("uuid");
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.use(express.static("public"));
 
 let lobbies = [];
+let userStats = {}; // { nickname: { lobbies: x, messages: y } }
 
 io.on("connection", socket => {
+  let currentUser = null;
+
+  socket.on("registerUser", name => {
+    currentUser = name;
+    if (!userStats[name]) userStats[name] = { lobbies: 0, messages: 0 };
+  });
+
   socket.on("createLobby", (data, cb) => {
-    const id = uuidv4();
-    const lobby = {
-      id,
-      game: data.game,
-      host: data.host,
-      maxPlayers: data.maxPlayers,
-      private: data.private,
-      players: [{ name: data.host, id: socket.id }]
-    };
+    const id = Math.random().toString(36).substr(2, 9);
+    const lobby = { id, game: data.game, host: data.host, maxPlayers: data.maxPlayers, private: data.private, players: [{ name: data.host }], messages: [] };
     lobbies.push(lobby);
-    socket.join(id);
+    if (!userStats[data.host]) userStats[data.host] = { lobbies: 0, messages: 0 };
+    userStats[data.host].lobbies++;
     cb(id);
-    io.to(socket.id).emit("joinedLobby", lobby);
+    io.emit("lobbyList", lobbies.filter(l => l.game === data.game));
+    socket.join(id);
+    socket.emit("joinedLobby", lobby);
   });
 
   socket.on("getLobbies", game => {
-    const filtered = lobbies.filter(l => l.game === game && !l.private);
-    socket.emit("lobbyList", filtered);
+    io.to(socket.id).emit("lobbyList", lobbies.filter(l => l.game === game));
   });
 
-  socket.on("joinLobby", (lobbyId, nickname) => {
+  socket.on("joinLobby", (lobbyId, name) => {
     const lobby = lobbies.find(l => l.id === lobbyId);
     if (!lobby) return;
-    if (lobby.players.find(p => p.name === nickname)) return;
+    if (lobby.players.find(p => p.name === name)) return;
     if (lobby.players.length >= lobby.maxPlayers) return;
-    lobby.players.push({ name: nickname, id: socket.id });
+    lobby.players.push({ name });
+    if (!userStats[name]) userStats[name] = { lobbies: 0, messages: 0 };
+    userStats[name].lobbies++;
     socket.join(lobbyId);
-    io.to(socket.id).emit("joinedLobby", lobby);
+    io.to(lobbyId).emit("joinedLobby", lobby);
     io.to(lobbyId).emit("lobbyUpdate", lobby);
+    io.emit("lobbyList", lobbies.filter(l => l.game === lobby.game));
   });
 
-  socket.on("kickPlayer", (lobbyId, playerName) => {
+  socket.on("chatMessage", ({ lobbyId, nickname, msg }) => {
     const lobby = lobbies.find(l => l.id === lobbyId);
     if (!lobby) return;
-    if (lobby.host !== lobby.players.find(p => p.id === socket.id)?.name) return;
-    const idx = lobby.players.findIndex(p => p.name === playerName);
-    if (idx !== -1) {
-      const kicked = lobby.players.splice(idx, 1)[0];
-      io.to(kicked.id).emit("joinedLobby", { id: null, players: [] });
-      io.to(lobbyId).emit("lobbyUpdate", lobby);
-      io.sockets.sockets.get(kicked.id)?.leave(lobbyId);
-    }
+    lobby.messages.push({ nickname, msg });
+    if (!userStats[nickname]) userStats[nickname] = { lobbies: 0, messages: 0 };
+    userStats[nickname].messages++;
+    io.to(lobbyId).emit("chatMessage", { nickname, msg });
   });
 
-  socket.on("chatMessage", data => {
-    io.to(data.lobbyId).emit("chatMessage", { nickname: data.nickname, msg: data.msg });
-  });
-
-  socket.on("disconnect", () => {
-    lobbies.forEach(lobby => {
-      const idx = lobby.players.findIndex(p => p.id === socket.id);
-      if (idx !== -1) {
-        lobby.players.splice(idx, 1);
-        io.to(lobby.id).emit("lobbyUpdate", lobby);
-      }
-    });
-    lobbies = lobbies.filter(l => l.players.length > 0);
+  socket.on("getProfile", (name, cb) => {
+    if (!userStats[name]) userStats[name] = { lobbies: 0, messages: 0 };
+    cb(userStats[name]);
   });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(3000, () => {
+  console.log("Server running on http://localhost:3000");
+});
