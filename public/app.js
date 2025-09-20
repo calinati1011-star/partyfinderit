@@ -47,6 +47,10 @@ function renderGameList(games) {
     });
 
     li.querySelector(".see-lobbies").addEventListener("click", () => {
+      if(currentLobby){
+        alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
+        return;
+      }
       socket.emit("getLobbies", game);
     });
   });
@@ -143,6 +147,10 @@ socket.on("lobbyList", lobbies => {
       <button class="px-3 py-1 rounded-xl bg-neonBlue hover:bg-neonPink">Entra</button>
     `;
     div.querySelector("button").addEventListener("click", () => {
+      if(currentLobby){
+        alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
+        return;
+      }
       socket.emit("joinLobby", lobby.id, nickname);
     });
     list.appendChild(div);
