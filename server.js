@@ -49,6 +49,20 @@ io.on("connection", socket => {
     io.emit("lobbyList", lobbies.filter(l => l.game === lobby.game));
   });
 
+  socket.on("leaveLobby", (lobbyId, name) => {
+    const lobby = lobbies.find(l => l.id === lobbyId);
+    if (!lobby) return;
+    lobby.players = lobby.players.filter(p => p.name !== name);
+    socket.leave(lobbyId);
+
+    if (lobby.players.length === 0) {
+      lobbies = lobbies.filter(l => l.id !== lobbyId);
+    } else {
+      io.to(lobbyId).emit("lobbyUpdate", lobby);
+    }
+    io.emit("lobbyList", lobbies.filter(l => l.game === lobby.game));
+  });
+
   socket.on("chatMessage", ({ lobbyId, nickname, msg }) => {
     const lobby = lobbies.find(l => l.id === lobbyId);
     if (!lobby) return;

@@ -1,22 +1,28 @@
 const socket = io();
-let nickname = localStorage.getItem("nickname") || "Anonimo";
+let nickname = "player-" + Math.floor(1000 + Math.random() * 9000);
 let currentLobby = null;
 let gameToCreate = null;
 let lobbyIsPrivate = false;
+
 const allGames = [
-  "Fortnite","Minecraft","Valorant",
-  "FIFA 17","FIFA 18","FIFA 19","FIFA 20","FIFA 21",
-  "FIFA 22","FIFA 23","FIFA 24",
-  "Counter-Strike 2","Rainbow Six Siege","League of Legends",
-  "Overwatch","GTA V","Among Us"
+  "Fortnite","Minecraft","Valorant","FIFA 17","FIFA 18","FIFA 19","FIFA 20","FIFA 21",
+  "FIFA 22","FIFA 23","FIFA 24","FC25","Counter-Strike 2","Rainbow Six Siege","League of Legends",
+  "Overwatch","GTA V","Among Us","PUBG","Apex Legends","Call of Duty: Warzone",
+  "Rocket League","Dota 2","Starcraft II","World of Warcraft","Hearthstone",
+  "Diablo IV","Elden Ring","The Witcher 3","Cyberpunk 2077","Red Dead Redemption 2",
+  "Assassin’s Creed Valhalla","Far Cry 6","Battlefield V","Battlefield 2042",
+  "Halo Infinite","Destiny 2","Fall Guys","TFT","Clash Royale","Clash of Clans",
+  "Brawl Stars","Pokemon Unite","Monster Hunter World","Tekken 7","Street Fighter 6",
+  "Mortal Kombat 11","Gran Turismo 7","Forza Horizon 5","Need for Speed Heat",
+  "NBA 2K24","Madden NFL 24","Starfield","Skyrim","DayZ","Rust","ARK: Survival Evolved",
+  "Sea of Thieves","Palworld","Terraria","Stardew Valley","Hollow Knight",
+  "Celeste","Cuphead","Ori and the Will of the Wisps","Valheim","Escape from Tarkov"
 ];
 const mainGames = ["Fortnite","Minecraft","Valorant"];
 const gameList = document.getElementById("game-list");
 const searchInput = document.getElementById("search");
 const suggestions = document.getElementById("search-suggestions");
 const playerListDiv = document.getElementById("player-list");
-const nicknameInput = document.getElementById("nickname");
-nicknameInput.value = nickname;
 const messagesDiv = document.getElementById("messages");
 
 function renderGameList(games) {
@@ -77,39 +83,6 @@ searchInput.addEventListener("input", () => {
 
 document.addEventListener("click", e => {
   if (!searchInput.contains(e.target)) suggestions.classList.add("hidden");
-});
-
-function generateConfetti() {
-  const colors = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa'];
-  for (let i = 0; i < 20; i++) {
-    const c = document.createElement('span');
-    c.className = 'confetti';
-    c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-    c.style.left = `${Math.random() * 100}%`;
-    c.style.animationDuration = `${0.8 + Math.random() * 0.7}s`;
-    document.body.appendChild(c);
-    setTimeout(() => c.remove(), 1500);
-  }
-}
-
-document.getElementById("set-nickname").addEventListener("click", () => {
-  const val = nicknameInput.value.trim();
-  if (!val) return;
-  nickname = val;
-  localStorage.setItem("nickname", nickname);
-  socket.emit("registerUser", nickname); // registra sul server
-  const toast = document.getElementById("nickname-toast");
-  const msgDiv = toast.querySelector("div");
-  msgDiv.innerText = `Nome cambiato in "${nickname}"`;
-  toast.classList.remove("pointer-events-none");
-  msgDiv.classList.remove("opacity-0","scale-90");
-  msgDiv.classList.add("opacity-100","scale-100");
-  generateConfetti();
-  setTimeout(() => {
-    msgDiv.classList.remove("opacity-100","scale-100");
-    msgDiv.classList.add("opacity-0","scale-90");
-    toast.classList.add("pointer-events-none");
-  }, 2000);
 });
 
 const privateBtn = document.getElementById("private-toggle-btn");
@@ -183,9 +156,23 @@ socket.on("joinedLobby", lobby => {
   if (lobby.messages) lobby.messages.forEach(m => appendMessage(m.nickname, m.msg));
   document.getElementById("msg").disabled = false;
   document.querySelector("#send-form button").disabled = false;
+  document.getElementById("leave-lobby").classList.remove("hidden");
   document.getElementById("user-count").innerText = `${lobby.players.length}/${lobby.maxPlayers}`;
   updatePlayerList(lobby);
   document.getElementById("sound-join").play();
+});
+
+document.getElementById("leave-lobby").addEventListener("click", () => {
+  if (!currentLobby) return;
+  socket.emit("leaveLobby", currentLobby, nickname);
+  currentLobby = null;
+  document.getElementById("room-title").innerText = "Nessuna stanza";
+  document.getElementById("messages").innerHTML = "";
+  document.getElementById("msg").disabled = true;
+  document.querySelector("#send-form button").disabled = true;
+  document.getElementById("leave-lobby").classList.add("hidden");
+  document.getElementById("user-count").innerText = "";
+  playerListDiv.innerHTML = "";
 });
 
 function updatePlayerList(lobby) {
