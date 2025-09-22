@@ -1,165 +1,165 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>TeamSyncer</title>
-<link rel="icon" href="logo.png" type="image/jpeg">
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config={
-  theme:{
-    extend:{
-      colors:{
-        neonBlue:'#0ea5e9',
-        neonPink:'#FF00FF',
-        darkBg:'#0f111a',
-        panelBg:'#1a1c2c',
-        panelHover:'#222540'
-      },
-      keyframes:{
-        gradientMove:{
-          '0%':{backgroundPosition:'0% 50%'},
-          '50%':{backgroundPosition:'100% 50%'},
-          '100%':{backgroundPosition:'0% 50%'}
-        },
-        scaleIn:{'0%':{transform:'scale(0.8)',opacity:'0'},'100%':{transform:'scale(1)',opacity:'1'}}
-      },
-      animation:{
-        gradientMove:'gradientMove 12s ease infinite',
-        scaleIn:'scaleIn 0.2s ease-out'
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeamSyncer — Gaming</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="logo.png" type="image/png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Orbitron', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            steamBg: '#0b0d12',
+            panel: '#0f1220',
+            panelSoft: '#141826',
+            neonCyan: '#00e5ff',
+            neonMagenta: '#ff00d0',
+            neonGreen: '#00ff9f',
+            accent: '#1f2937',
+            glass: 'rgba(255,255,255,0.04)'
+          },
+          boxShadow: {
+            'glow-cyan': '0 6px 30px rgba(0,229,255,0.06), 0 0 12px rgba(0,229,255,0.08)',
+            'glow-mag': '0 6px 30px rgba(255,0,208,0.04)'
+          }
+        }
       }
     }
-  }
-}
-</script>
-<style>
-body{margin:0;font-family:'Arial',sans-serif;overflow-x:hidden;}
-#bg-animated{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:linear-gradient(-45deg,#0ea5e9,#9333ea,#4e121c,#261157);
-  background-size:400% 400%;
-  animation:gradientMove 15s ease infinite;
-  z-index:0;
-}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-thumb{background:#0e0b31;border-radius:3px}
-::-webkit-scrollbar-track{background:#111}
-
-/* Modifiche per mobile e lobby */
-#lobby-list {
-  max-height: 180px; /* Altezza limitata su mobile */
-  overflow-y: auto;
-}
-#game-list {
-  max-height: 180px;
-  overflow-y: auto;
-}
-#messages {
-  max-height: calc(50vh - 40px); /* Riduce altezza su mobile per poter scrivere */
-  overflow-y: auto;
-}
-#chat-warning {
-  display: none;
-  font-size: 0.75rem;
-  color: #facc15;
-  margin-left: 0.5rem;
-}
-@media(max-width: 640px) {
-  #chat-warning { display: inline; }
-}
-</style>
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    html,body { height:100%; }
+    body {
+      margin:0;
+      font-family:Inter, sans-serif;
+      background: radial-gradient(1200px 600px at 10% 20%, rgba(0,229,255,0.04), transparent 6%),
+                  radial-gradient(900px 400px at 90% 80%, rgba(255,0,208,0.03), transparent 8%),
+                  linear-gradient(180deg, #05060a 0%, #0b0d12 40%, #06070b 100%);
+      color: #e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow:hidden;
+    }
+    #steam-lines {
+      position: fixed; inset: 0; pointer-events: none; z-index:0;
+      background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.01) 0 1px, transparent 1px 30px);
+      opacity: 0.06;
+      animation: drift 18s linear infinite;
+      transform: translate3d(0,0,0);
+    }
+    @keyframes drift { from { background-position: 0 0; } to { background-position: 1000px 0; } }
+    #vignette {
+      position: fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(60% 40% at 10% 10%, rgba(0,0,0,0.0), rgba(0,0,0,0.55) 60%);
+      mix-blend-mode: multiply;
+    }
+    .neon-title { text-shadow: 0 0 8px rgba(0,229,255,0.12), 0 0 24px rgba(0,229,255,0.06); }
+    ::-webkit-scrollbar { width:10px; height:10px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius:8px; border: 2px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .msg-bubble { word-break:break-word; }
+    .btn-pulse { animation: pulse 2.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,229,255,0.00); } 70% { box-shadow: 0 0 30px 6px rgba(0,229,255,0.02); } 100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.00); } }
+    .glass-border { border: 1px solid rgba(255,255,255,0.04); backdrop-filter: blur(6px); }
+  </style>
 </head>
-<body class="text-white min-h-screen flex justify-center items-start p-2 sm:p-4 relative overflow-hidden">
+<body class="min-h-screen flex items-start justify-center p-4 relative">
 
-<!-- Sito in costruzione -->
-<div class="fixed top-2 left-1/2 -translate-x-1/2 bg-black-400 text-white px-4 py-1 rounded-full z-50 text-sm font-semibold">
-  Sito in costruzione
-</div>
+  <div id="steam-lines" aria-hidden="true"></div>
+  <div id="vignette" aria-hidden="true"></div>
 
-<div id="bg-animated"></div>
-
-<div class="w-full max-w-6xl flex flex-col gap-4 sm:gap-6 relative z-10">
-  <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
-    <div class="flex items-center gap-2 sm:gap-3 justify-center sm:justify-start">
-      <img src="logo.png" alt="TeamSyncer Logo" class="w-12 h-12 sm:w-16 sm:h-16 rounded-lg">
-      <h1 class="text-2xl sm:text-4xl font-extrabold text-neonBlue">TeamSyncer</h1>
-    </div>
-  </header>
-
-  <main class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-    <!-- Lista giochi -->
-    <section class="md:col-span-1 relative">
-      <div class="bg-panelBg rounded-2xl shadow-lg p-3 sm:p-5 flex flex-col gap-3 relative h-full">
-        <h2 class="text-lg sm:text-2xl font-semibold text-neonBlue">Scegli un gioco</h2>
-        <div class="relative">
-          <input id="search" type="text" placeholder="Cerca gioco..." class="w-full px-3 sm:px-4 py-2 rounded-full bg-darkBg border border-neonBlue outline-none text-white placeholder:text-slate-400">
-          <ul id="search-suggestions" class="absolute bg-panelBg rounded-xl mt-1 w-full z-20 hidden max-h-60 overflow-auto"></ul>
-        </div>
-        <ul id="game-list" class="space-y-2 mt-2"></ul>
-        <div id="lobby-list" class="mt-3 space-y-2 hidden"></div>
-      </div>
-    </section>
-
-    <!-- Chat -->
-    <section class="md:col-span-2 flex flex-col">
-      <div class="bg-panelBg rounded-2xl shadow-lg p-3 sm:p-5 flex flex-col h-[60vh] sm:h-[60vh] flex-1">
-        <div class="flex items-center justify-between mb-2 sm:mb-3">
-          <h2 id="room-title" class="text-lg sm:text-2xl font-semibold text-neonBlue truncate">Nessuna stanza</h2>
-          <div class="flex items-center gap-2 sm:gap-3">
-            <div id="user-count" class="text-xs sm:text-sm text-slate-400"></div>
-            <button id="leave-lobby" class="px-2 sm:px-3 py-1 rounded-full bg-red-600 hover:bg-red-500 text-white hidden text-sm">Esci</button>
-          </div>
-        </div>
-        <div id="player-list" class="flex flex-wrap gap-2 mb-2"></div>
-        <div id="messages" class="flex-1 overflow-auto bg-darkBg rounded-2xl p-2 sm:p-3 space-y-2 mb-2"></div>
-
-        <form id="send-form" class="mt-auto flex gap-2">
-          <input id="msg" type="text" placeholder="Scrivi un messaggio..." class="flex-1 px-3 py-2 rounded-full bg-darkBg border border-neonBlue outline-none disabled:opacity-50 text-sm sm:text-base" disabled>
-          <button type="submit" id="send-btn" class="px-3 sm:px-4 py-2 rounded-full bg-neonBlue hover:bg-neonPink text-darkBg disabled:opacity-50 font-semibold text-sm sm:text-base" disabled>Invia</button>
-        </form>
-        <div class="flex items-center mt-1">
-          <span id="chat-warning">Se non riesci a scrivere, usa modalità desktop</span>
+  <div class="w-full max-w-7xl relative z-20 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <aside class="lg:col-span-1 bg-panel rounded-2xl glass-border p-4 flex flex-col gap-4 shadow-glow-cyan">
+      <div class="flex items-center gap-3">
+        <img src="logo.png" alt="logo" class="w-12 h-12 rounded-md ring-1 ring-white/5">
+        <div>
+          <h1 class="text-xl font-display neon-title">TeamSyncer</h1>
+          <p class="text-xs text-slate-400">Lobby ITA</p>
         </div>
       </div>
-    </section>
-  </main>
-</div>
+      <div class="mt-2">
+        <label for="search" class="text-xs text-slate-400">Cerca gioco</label>
+        <div class="relative mt-2">
+          <input id="search" type="text" placeholder="Es. GTA V, FC25..." aria-label="Cerca gioco" class="w-full bg-panelSoft rounded-full px-4 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-neonCyan">
+          <ul id="search-suggestions" class="absolute left-0 right-0 mt-2 bg-panel rounded-xl hidden max-h-56 overflow-auto p-1 space-y-1 z-40"></ul>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-sm text-slate-300 mb-2">Giochi principali</h3>
+        <ul id="game-list" class="space-y-2 max-h-56 overflow-auto pr-2"></ul>
+      </div>
+      <div class="mt-auto">
+        <button id="create-lobby-global" class="w-full bg-gradient-to-r from-neonCyan to-neonMagenta text-black py-2 rounded-xl font-semibold btn-pulse shadow-glow-cyan">+ Crea Lobby</button>
+        <p class="text-xs text-slate-500 mt-2">Lobby pubbliche • 1-8 giocatori</p>
+      </div>
+    </aside>
 
-<!-- Modal lobby -->
-<div id="lobby-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-2">
-  <div class="bg-panelBg rounded-2xl p-4 sm:p-6 w-full max-w-sm animate-scaleIn flex flex-col gap-3">
-    <h3 class="text-lg sm:text-xl font-semibold text-neonBlue">Crea una Lobby</h3>
-    <p class="text-sm text-slate-400">Scegli il numero di giocatori (1-8)</p>
-    <input id="max-players" type="number" min="1" max="8" value="4" class="w-full px-4 py-2 rounded-full bg-darkBg border border-neonBlue text-white outline-none text-center">
-    <button id="private-toggle-btn" class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 transition">
-      <span id="private-icon">🔓</span> 
-      <span id="private-label">Lobby pubblica</span>
-    </button>
-    <div class="flex justify-end gap-3">
-      <button id="cancel-lobby" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600">Annulla</button>
-      <button id="confirm-lobby" class="px-4 py-2 rounded-full bg-neonBlue hover:bg-neonPink text-darkBg font-semibold">Crea</button>
+    <main class="lg:col-span-3 grid grid-rows-[auto_1fr_auto] gap-4">
+      <div class="bg-panel rounded-2xl glass-border p-4 flex items-center justify-between shadow-glow-cyan">
+        <div>
+          <h2 id="room-title" class="text-lg font-semibold neon-title truncate">Nessuna stanza</h2>
+          <div id="user-count" class="text-xs text-slate-400"></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="player-list" class="flex items-center gap-2"></div>
+          <button id="leave-lobby" class="hidden px-3 py-1 rounded-full bg-red-700 hover:bg-red-600 text-white text-sm">Esci</button>
+        </div>
+      </div>
+
+      <section class="bg-panel rounded-2xl glass-border p-4 flex flex-col gap-3 overflow-hidden">
+        <div id="messages" class="flex-1 overflow-auto space-y-3 p-1"></div>
+      </section>
+
+      <form id="send-form" class="bg-panel rounded-2xl glass-border p-3 flex items-center gap-3">
+        <input id="msg" type="text" placeholder="Scrivi un messaggio..." aria-label="Messaggio" class="flex-1 bg-transparent border border-transparent outline-none px-4 py-2 rounded-full text-sm placeholder:text-slate-500" disabled>
+        <button type="submit" id="send-btn" class="px-4 py-2 rounded-full bg-neonCyan text-black font-semibold disabled:opacity-50" disabled>Invia</button>
+      </form>
+    </main>
+  </div>
+
+  <div id="lobby-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-panelSoft rounded-2xl glass-border p-6 shadow-glow-mag">
+      <h3 class="text-xl font-display mb-1 neon-title">Crea una Lobby</h3>
+      <p class="text-sm text-slate-400 mb-4">Scegli il gioco e il numero massimo di giocatori (1-8)</p>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-slate-400">Gioco</label>
+          <input id="lobby-game" type="text" readonly class="w-full bg-transparent px-3 py-2 rounded-md border border-slate-700 text-sm" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400">Max giocatori</label>
+          <input id="max-players" type="number" min="1" max="8" value="4" class="w-full bg-transparent px-3 py-2 rounded-md border border-slate-700 text-sm" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 mt-4">
+        <button id="cancel-lobby" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600">Annulla</button>
+        <button id="confirm-lobby" class="px-4 py-2 rounded-full bg-neonMagenta text-black font-semibold">Crea</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Modal profilo -->
-<div id="profile-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-2">
-  <div class="bg-panelBg rounded-2xl p-4 sm:p-6 w-full max-w-xs animate-scaleIn flex flex-col gap-3">
-    <h3 class="text-lg sm:text-xl font-semibold text-neonBlue" id="profile-nickname"></h3>
-    <p class="text-sm text-slate-400" id="profile-lobbies"></p>
-    <p class="text-sm text-slate-400" id="profile-messages"></p>
-    <div class="flex justify-end">
-      <button id="close-profile" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600">Chiudi</button>
+  <div id="profile-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-panelSoft rounded-2xl glass-border p-5">
+      <h3 id="profile-nickname" class="text-lg font-display neon-title"></h3>
+      <p id="profile-lobbies" class="text-sm text-slate-400"></p>
+      <p id="profile-messages" class="text-sm text-slate-400"></p>
+      <div class="flex justify-end mt-4">
+        <button id="close-profile" class="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600">Chiudi</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Suoni -->
-<audio id="sound-message" src="message.mp3" preload="auto"></audio>
-<audio id="sound-join" src="join.mp3" preload="auto"></audio>
+  <audio id="sound-message" src="message.mp3" preload="auto"></audio>
+  <audio id="sound-join" src="join.mp3" preload="auto"></audio>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/app.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js" defer></script>
 </body>
 </html>

@@ -2,7 +2,6 @@ const socket = io();
 let nickname = "player-" + Math.floor(1000 + Math.random() * 9000);
 let currentLobby = null;
 let gameToCreate = null;
-let lobbyIsPrivate = false;
 
 const allGames = [
   "Fortnite","Minecraft","Valorant","FIFA 17","FIFA 18","FIFA 19","FIFA 20","FIFA 21",
@@ -19,138 +18,158 @@ const allGames = [
   "Celeste","Cuphead","Ori and the Will of the Wisps","Valheim","Escape from Tarkov"
 ];
 const mainGames = ["Fortnite","Minecraft","Valorant"];
-const gameList = document.getElementById("game-list");
-const searchInput = document.getElementById("search");
-const suggestions = document.getElementById("search-suggestions");
-const playerListDiv = document.getElementById("player-list");
-const messagesDiv = document.getElementById("messages");
+
+const els = {
+  gameList: document.getElementById("game-list"),
+  search: document.getElementById("search"),
+  suggestions: document.getElementById("search-suggestions"),
+  playerList: document.getElementById("player-list"),
+  messages: document.getElementById("messages"),
+  lobbyModal: document.getElementById("lobby-modal"),
+  lobbyGameInput: document.getElementById("lobby-game"),
+  maxPlayers: document.getElementById("max-players"),
+  cancelLobby: document.getElementById("cancel-lobby"),
+  confirmLobby: document.getElementById("confirm-lobby"),
+  createLobbyGlobal: document.getElementById("create-lobby-global"),
+  sendForm: document.getElementById("send-form"),
+  msgInput: document.getElementById("msg"),
+  sendBtn: document.getElementById("send-btn"),
+  leaveBtn: document.getElementById("leave-lobby"),
+  roomTitle: document.getElementById("room-title"),
+  userCount: document.getElementById("user-count"),
+  profileModal: document.getElementById("profile-modal"),
+  profileNickname: document.getElementById("profile-nickname"),
+  profileLobbies: document.getElementById("profile-lobbies"),
+  profileMessages: document.getElementById("profile-messages"),
+  closeProfile: document.getElementById("close-profile")
+};
+
+function escapeHTML(str = "") {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 function renderGameList(games) {
-  gameList.innerHTML = "";
+  els.gameList.innerHTML = "";
   games.forEach(game => {
     const li = document.createElement("li");
-    li.dataset.game = game;
-    li.className = "flex items-center justify-between bg-panelBg rounded-xl p-2 hover:bg-panelHover transition";
+    li.className = "flex items-center justify-between bg-panelSoft rounded-xl p-2 hover:bg-slate-800 transition cursor-default";
     li.innerHTML = `
-      <span>${game}</span>
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-gradient-to-br from-neonCyan to-neonMagenta rounded-md flex items-center justify-center text-black font-semibold">${escapeHTML(game[0] || "?")}</div>
+        <div>
+          <div class="text-sm font-semibold">${escapeHTML(game)}</div>
+          <div class="text-xs text-slate-400"></div>
+        </div>
+      </div>
       <div class="flex gap-2">
-        <button class="see-lobbies bg-neonBlue px-2 py-1 rounded-lg">Lobby</button>
-        <button class="create-lobby bg-neonPink px-2 py-1 rounded-lg">+ Lobby</button>
+        <button class="see-lobbies px-3 py-1 rounded-lg bg-transparent hover:bg-neonCyan/6 text-xs">Lobby</button>
+        <button class="create-lobby px-3 py-1 rounded-lg bg-neonMagenta text-black font-semibold text-xs">+Lobby</button>
       </div>
     `;
-    gameList.appendChild(li);
+    els.gameList.appendChild(li);
 
     li.querySelector(".create-lobby").addEventListener("click", () => {
       gameToCreate = game;
-      document.getElementById("lobby-modal").classList.remove("hidden");
-      document.getElementById("max-players").value = 4;
+      els.lobbyGameInput.value = game;
+      els.maxPlayers.value = 4;
+      els.lobbyModal.classList.remove("hidden");
     });
 
     li.querySelector(".see-lobbies").addEventListener("click", () => {
-      if(currentLobby){
-        alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
-        return;
-      }
+      if (currentLobby) return alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
       socket.emit("getLobbies", game);
     });
   });
 }
+
 renderGameList(mainGames);
 
-searchInput.addEventListener("input", () => {
-  const q = searchInput.value.trim().toLowerCase();
-  suggestions.innerHTML = "";
+els.search.addEventListener("input", () => {
+  const q = els.search.value.trim().toLowerCase();
+  els.suggestions.innerHTML = "";
   if (!q) {
-    suggestions.classList.add("hidden");
+    els.suggestions.classList.add("hidden");
     renderGameList(mainGames);
     return;
   }
   const filtered = allGames.filter(g => g.toLowerCase().includes(q));
-  if (filtered.length === 0) {
-    suggestions.classList.add("hidden");
+  if (!filtered.length) {
+    els.suggestions.classList.add("hidden");
     renderGameList([]);
     return;
   }
-  filtered.forEach(game => {
+  filtered.slice(0, 30).forEach(game => {
     const li = document.createElement("li");
-    li.className = "px-3 py-2 hover:bg-panelHover cursor-pointer rounded-xl";
-    li.innerText = game;
+    li.className = "px-3 py-2 hover:bg-panel rounded-lg cursor-pointer text-sm";
+    li.textContent = game;
     li.addEventListener("click", () => {
-      searchInput.value = game;
-      suggestions.classList.add("hidden");
+      els.search.value = game;
+      els.suggestions.classList.add("hidden");
       renderGameList([game]);
     });
-    suggestions.appendChild(li);
+    els.suggestions.appendChild(li);
   });
-  suggestions.classList.remove("hidden");
+  els.suggestions.classList.remove("hidden");
 });
 
 document.addEventListener("click", e => {
-  if (!searchInput.contains(e.target)) suggestions.classList.add("hidden");
+  if (!els.search.contains(e.target) && !els.suggestions.contains(e.target)) els.suggestions.classList.add("hidden");
 });
 
-const privateBtn = document.getElementById("private-toggle-btn");
-const privateIcon = document.getElementById("private-icon");
-const privateLabel = document.getElementById("private-label");
-privateBtn.addEventListener("click", () => {
-  lobbyIsPrivate = !lobbyIsPrivate;
-  if (lobbyIsPrivate) {
-    privateBtn.classList.remove("bg-slate-700","hover:bg-slate-600");
-    privateBtn.classList.add("bg-red-600","hover:bg-red-500");
-    privateIcon.innerText = "🔒";
-    privateLabel.innerText = "Lobby privata";
-  } else {
-    privateBtn.classList.remove("bg-red-600","hover:bg-red-500");
-    privateBtn.classList.add("bg-slate-700","hover:bg-slate-600");
-    privateIcon.innerText = "🔓";
-    privateLabel.innerText = "Lobby pubblica";
-  }
-});
-
-document.getElementById("cancel-lobby").addEventListener("click", () => {
-  document.getElementById("lobby-modal").classList.add("hidden");
+els.cancelLobby.addEventListener("click", () => {
+  els.lobbyModal.classList.add("hidden");
   gameToCreate = null;
-  lobbyIsPrivate = false;
 });
 
-document.getElementById("confirm-lobby").addEventListener("click", () => {
-  const maxPlayers = parseInt(document.getElementById("max-players").value);
-  if (!maxPlayers || maxPlayers < 1 || maxPlayers > 8) {
-    alert("Numero giocatori non valido (1-8)");
-    return;
-  }
-  socket.emit("createLobby", {
-    game: gameToCreate,
-    maxPlayers,
-    host: nickname,
-    private: lobbyIsPrivate
-  }, lobbyId => { currentLobby = lobbyId; });
-  document.getElementById("lobby-modal").classList.add("hidden");
+els.confirmLobby.addEventListener("click", () => {
+  const max = parseInt(els.maxPlayers.value, 10);
+  if (!max || max < 1 || max > 8) return alert("Numero giocatori non valido (1-8)");
+  socket.emit("createLobby", { game: gameToCreate, maxPlayers: max, host: nickname }, lobbyId => {
+    currentLobby = lobbyId;
+  });
+  els.lobbyModal.classList.add("hidden");
   gameToCreate = null;
-  lobbyIsPrivate = false;
+});
+
+els.createLobbyGlobal.addEventListener("click", () => {
+  gameToCreate = "Custom Game";
+  els.lobbyGameInput.value = "Seleziona un gioco dalla sidebar";
+  els.maxPlayers.value = 4;
+  els.lobbyModal.classList.remove("hidden");
 });
 
 socket.on("lobbyList", lobbies => {
-  const list = document.getElementById("lobby-list");
+  let list = document.getElementById("lobby-list");
+  if (!list) {
+    const sidebar = document.querySelector('aside');
+    const div = document.createElement('div');
+    div.id = 'lobby-list';
+    div.className = 'mt-3 space-y-2';
+    sidebar.appendChild(div);
+    list = div;
+  }
   list.innerHTML = "";
   list.classList.remove("hidden");
-  if (lobbies.length === 0) {
-    list.innerHTML = "<p class='text-sm text-slate-400'>Nessuna lobby disponibile.</p>";
-    return;
-  }
+  if (!lobbies.length) return list.innerHTML = "<p class='text-sm text-slate-400'>Nessuna lobby disponibile.</p>";
   lobbies.forEach(lobby => {
     const div = document.createElement("div");
-    div.className = "p-3 bg-panelBg rounded-xl flex justify-between items-center transition hover:bg-panelHover";
-    const lockIcon = lobby.private ? "🔒 " : "";
+    div.className = "p-3 bg-panel rounded-xl flex justify-between items-center transition hover:bg-slate-800";
     div.innerHTML = `
-      <span>${lockIcon}${lobby.host}'s Lobby — ${lobby.players.length}/${lobby.maxPlayers}</span>
-      <button class="px-3 py-1 rounded-xl bg-neonBlue hover:bg-neonPink">Entra</button>
+      <div class="text-sm">
+        <div class="font-semibold">${escapeHTML(lobby.host)}'s Lobby</div>
+        <div class="text-xs text-slate-400">${lobby.game} • ${lobby.players.length}/${lobby.maxPlayers}</div>
+      </div>
+      <div>
+        <button class="join-lobby px-3 py-1 rounded-full bg-neonCyan text-black text-sm font-medium">Entra</button>
+      </div>
     `;
-    div.querySelector("button").addEventListener("click", () => {
-      if(currentLobby){
-        alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
-        return;
-      }
+    div.querySelector(".join-lobby").addEventListener("click", () => {
+      if (currentLobby) return alert("Sei già in una lobby! Esci prima di entrare in un'altra.");
       socket.emit("joinLobby", lobby.id, nickname);
     });
     list.appendChild(div);
@@ -159,86 +178,97 @@ socket.on("lobbyList", lobbies => {
 
 socket.on("joinedLobby", lobby => {
   currentLobby = lobby.id;
-  document.getElementById("room-title").innerText = `Lobby di ${lobby.host} — ${lobby.game}`;
-  document.getElementById("messages").innerHTML = "";
+  els.roomTitle.textContent = `Lobby di ${lobby.host} — ${lobby.game}`;
+  els.messages.innerHTML = "";
   if (lobby.messages) lobby.messages.forEach(m => appendMessage(m.nickname, m.msg));
-  document.getElementById("msg").disabled = false;
-  document.querySelector("#send-form button").disabled = false;
-  document.getElementById("leave-lobby").classList.remove("hidden");
-  document.getElementById("user-count").innerText = `${lobby.players.length}/${lobby.maxPlayers}`;
+  els.msgInput.disabled = false;
+  els.sendBtn.disabled = false;
+  els.leaveBtn.classList.remove("hidden");
+  els.userCount.textContent = `${lobby.players.length}/${lobby.maxPlayers}`;
   updatePlayerList(lobby);
-  document.getElementById("sound-join").play();
+  try { document.getElementById("sound-join").play(); } catch(e){}
+  els.msgInput.focus();
 });
 
-document.getElementById("leave-lobby").addEventListener("click", () => {
+els.leaveBtn.addEventListener("click", () => {
   if (!currentLobby) return;
   socket.emit("leaveLobby", currentLobby, nickname);
-  currentLobby = null;
-  document.getElementById("room-title").innerText = "Nessuna stanza";
-  document.getElementById("messages").innerHTML = "";
-  document.getElementById("msg").disabled = true;
-  document.querySelector("#send-form button").disabled = true;
-  document.getElementById("leave-lobby").classList.add("hidden");
-  document.getElementById("user-count").innerText = "";
-  playerListDiv.innerHTML = "";
+  clearLobbyState();
 });
+
+function clearLobbyState(){
+  currentLobby = null;
+  els.roomTitle.textContent = "Nessuna stanza";
+  els.messages.innerHTML = "";
+  els.msgInput.disabled = true;
+  els.sendBtn.disabled = true;
+  els.leaveBtn.classList.add("hidden");
+  els.userCount.textContent = "";
+  els.playerList.innerHTML = "";
+}
 
 function updatePlayerList(lobby) {
-  playerListDiv.innerHTML = "";
-  lobby.players.forEach(p => {
-    const span = document.createElement("span");
-    span.className = "px-3 py-1 bg-panelHover rounded-full flex items-center gap-2 cursor-pointer";
-    span.innerHTML = p.name || "Anonimo";
+  els.playerList.innerHTML = "";
+  (lobby.players || []).forEach(p => {
+    const span = document.createElement("button");
+    span.className = "px-3 py-1 bg-panel rounded-full flex items-center gap-2 text-xs text-slate-200 hover:bg-slate-800";
+    span.innerHTML = `<span class="font-medium">${escapeHTML(p.name || "Anonimo")}</span>`;
     if (lobby.host === p.name) {
-      span.innerHTML += " <span class='text-yellow-400 font-bold'>👑 Host</span>";
+      const crown = document.createElement("span");
+      crown.className = "ml-2 text-yellow-400 text-xs";
+      crown.textContent = "👑";
+      span.appendChild(crown);
     }
     span.addEventListener("click", () => showProfile(p.name));
-    playerListDiv.appendChild(span);
+    els.playerList.appendChild(span);
   });
 }
 
-function showProfile(name) {
+function showProfile(name){
+  if(!name) return;
   socket.emit("getProfile", name, data => {
-    document.getElementById("profile-nickname").innerText = name;
-    document.getElementById("profile-lobbies").innerText = `Lobby partecipate: ${data.lobbies}`;
-    document.getElementById("profile-messages").innerText = `Messaggi inviati: ${data.messages}`;
-    document.getElementById("profile-modal").classList.remove("hidden");
+    els.profileNickname.textContent = name;
+    els.profileLobbies.textContent = `Lobby partecipate: ${data?.lobbies ?? 0}`;
+    els.profileMessages.textContent = `Messaggi inviati: ${data?.messages ?? 0}`;
+    els.profileModal.classList.remove("hidden");
   });
 }
+els.closeProfile.addEventListener("click", () => els.profileModal.classList.add("hidden"));
 
-document.getElementById("close-profile").addEventListener("click", () => {
-  document.getElementById("profile-modal").classList.add("hidden");
-});
-
-document.getElementById("send-form").addEventListener("submit", e => {
+els.sendForm.addEventListener("submit", e => {
   e.preventDefault();
-  const msg = document.getElementById("msg").value.trim();
+  const msg = els.msgInput.value.trim();
   if (!msg || !currentLobby) return;
   socket.emit("chatMessage", { lobbyId: currentLobby, nickname, msg });
-  document.getElementById("msg").value = "";
+  els.msgInput.value = "";
 });
 
 function appendMessage(nick, msg) {
-  const div = document.createElement("div");
-  div.className = "bg-panelHover px-3 py-2 rounded-xl";
-  div.innerHTML = `<b>${nick || "Anonimo"}:</b> ${msg}`;
-  messagesDiv.appendChild(div);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  document.getElementById("sound-message").play();
+  const wrap = document.createElement("div");
+  wrap.className = "msg-bubble p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-transparent";
+  wrap.innerHTML = `<div class="text-xs text-slate-400 mb-1">${escapeHTML(nick || "Anonimo")}</div>
+                    <div class="text-sm">${escapeHTML(msg)}</div>`;
+  els.messages.appendChild(wrap);
+  els.messages.scrollTo({ top: els.messages.scrollHeight, behavior: "smooth" });
+  try { document.getElementById("sound-message").play(); } catch(e){}
 }
 
 socket.on("chatMessage", data => {
+  if (!data) return;
   appendMessage(data.nickname, data.msg);
 });
 
 socket.on("lobbyUpdate", lobby => {
+  if (!lobby) return;
   if (currentLobby === lobby.id) {
-    document.getElementById("user-count").innerText =
-      `${lobby.players.length}/${lobby.maxPlayers}`;
+    els.userCount.textContent = `${lobby.players.length}/${lobby.maxPlayers}`;
     updatePlayerList(lobby);
   }
   socket.emit("getLobbies", lobby.game);
 });
 
-// registra nickname al login
 socket.emit("registerUser", nickname);
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth < 640 && currentLobby) els.msgInput.focus();
+});
